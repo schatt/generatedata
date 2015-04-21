@@ -140,15 +140,20 @@ class DataType_NamesRegional extends DataTypePlugin {
 		$firstNames  = $this->generalFirstNames;
 		$lastNames   = $this->generalLastNames;
 
-		// if there's a country for this row,
+		// if there's a country for this row
 		$countrySlug = "";
+
 		if (!empty($rowCountryInfo) && isset($rowCountryInfo["randomData"]["slug"])) {
 			if (array_key_exists($rowCountryInfo["randomData"]["slug"], $this->regionalNames)) {
 				$countrySlug = $rowCountryInfo["randomData"]["slug"];
 			}
 		} else if (!empty($selectedCountryPlugins)) {
+
 			$availableRegionalCountries = array_keys($this->regionalNames);
-			$inBoth = array_intersect($availableRegionalCountries, $selectedCountryPlugins);
+
+			// weirdly, array_intersect preserves keys as well - even when the array's not a hash, like here
+			$inBothWithKeys = array_intersect($availableRegionalCountries, $selectedCountryPlugins);
+			$inBoth = array_values($inBothWithKeys);
 
 			if (!empty($inBoth)) {
 				$countrySlug = $inBoth[mt_rand(0, count($inBoth) - 1)];
@@ -161,7 +166,6 @@ class DataType_NamesRegional extends DataTypePlugin {
 			$firstNames  = $this->regionalNames[$countrySlug]["firstNames"];
 			$lastNames   = $this->regionalNames[$countrySlug]["lastNames"];
 		}
-
 
 		while (preg_match("/MaleName/", $placeholderStr)) {
 			$placeholderStr = preg_replace("/MaleName/", $this->getRandomFirstName($maleNames), $placeholderStr, 1);
@@ -192,13 +196,19 @@ class DataType_NamesRegional extends DataTypePlugin {
 	}
 
 
-	public function getRowGenerationOptions($generator, $post, $colNum, $numCols) {
+	public function getRowGenerationOptionsUI($generator, $post, $colNum, $numCols) {
 		if (!isset($post["dtOption_$colNum"]) || empty($post["dtOption_$colNum"])) {
 			return false;
 		}
 		return $post["dtOption_$colNum"];
 	}
 
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		if (empty($json->settings->placeholder)) {
+			return false;
+		}
+		return $json->settings->placeholder;
+	}
 
 	public function getDataTypeMetadata() {
 		return array(

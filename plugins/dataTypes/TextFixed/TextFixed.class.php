@@ -27,11 +27,15 @@ class DataType_TextFixed extends DataTypePlugin {
 		);
 	}
 
-	public function getRowGenerationOptions($generator, $postdata, $colNum, $numCols) {
+	public function getRowGenerationOptionsUI($generator, $postdata, $colNum, $numCols) {
 		if (empty($postdata["dtNumWords_$colNum"])) {
 			return false;
 		}
 		return $postdata["dtNumWords_$colNum"];
+	}
+
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		return $json->settings->numWords;
 	}
 
 	public function getOptionsColumnHTML() {

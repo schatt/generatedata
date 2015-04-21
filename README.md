@@ -2,9 +2,14 @@
 
 [![Build Status](https://travis-ci.org/benkeen/generatedata.png?branch=master)](https://travis-ci.org/benkeen/generatedata)
 
-This is the repo for the standalone, downloadable version of [generatedata.com](http://www.generatedata.com).
+This is the repo for the downloadable version of [generatedata.com](http://www.generatedata.com). The 
+script is basically an *engine* to generate any sort of random data in any format. It currently comes with 30 or 
+so *Data Types* (types of data it generates), plus 8 *Export Types* (formats for the data), but it can be extended 
+in any way you want. Check out the [developer documentation](http://benkeen.github.io/generatedata/developer.html)
+for that.
 
-Generally the trunk is pretty stable, but it's never guaranteed. If you're downloading the code, I'd suggest getting the most recent tag: https://github.com/benkeen/generatedata/releases
+Generally the trunk is pretty stable, but it's never guaranteed. If you're downloading the code, I'd suggest getting
+the most recent tag: https://github.com/benkeen/generatedata/releases
 
 ## Requirements
 - PHP 5.3 or later
@@ -12,25 +17,41 @@ Generally the trunk is pretty stable, but it's never guaranteed. If you're downl
 
 ## How to Install / Documentation
 
-For the installation instructions, user documentation and developer documentation, check out:
+For installation instructions, user and developer documentation, check out:
 http://benkeen.github.io/generatedata/
 
-Installation is really, really simple. I deliberately wrote the script to be as self-contained as possible and not require
-additional PHP/Server configuration when setting it up. That said, it *does* require PHP 5.3.0 or later. See the documentation
-for more info.
+Installation is really, really simple. I deliberately wrote the script to be as self-contained as possible and not 
+require additional PHP/Server configuration when setting it up. That said, it *does* require PHP 5.3.0 or later. See 
+the documentation for more info.
 
-## Test Coverage
+## Installation via Vagrant
 
-Test coverage is pretty weak right now! I'm in the midst of adding phpunit tests and integrating it with Travis, but it's going to be a little hairy for a while just yet.
+There's a prepackaged installation available via vagrant [found here](https://github.com/benkeen/generatedata-vagrant),
+courtesy of Daragh Courtney. If you're not familiar with Vagrant, basically it's a package that includes not just the
+generatedata script, but the entire development environment along with it: PHP, MySQL and Apache. Super handy.
+
+# Test Coverage
+
+Test coverage is pretty weak right now! I'm in the midst of adding phpunit tests and integrating it with Travis, but it's
+going to be a little hairy for a while just yet.
+
+## To-Do
+
+Please see the issues tagges as [feature requests] (https://github.com/benkeen/generatedata/issues?labels=Feature+Request%21&page=1&state=open)
+for a list of things that are still left to complete on this project. Help is always welcome!
 
 ## License
 
-This script is freely available under the GPL 3 license. See license.txt in the root folder. Please note that all contributors agree that all code is released under this license.
+This script is freely available under the GPL 3 license. See license.txt in the root folder. Please note that all
+contributors agree that all code is released under this license.
 
 ## Contributors
 
 In addition to the many folks who submit bug reports, a big thanks to the following for their help extending the script:
 
+- [Daragh Courtney](https://github.com/daraghc) - [Data Generator Vagrant repo](https://github.com/benkeen/generatedata-vagrant)
+- [Zhao Yang](https://github.com/jptiancai) - Chinese language file (3.1.4)
+- [Anton Nizhegorodov](https://github.com/an1zhegorodov) - Batch size SQL export option (3.1.3)
 - Zeeshan Shaikh - PAN, PIN, CVV, Track 1 and 2 Data Types (3.1.1)
 - [Ap.Mathu](https://github.com/apmuthu) - SQL Export Type updates (INSERT IGNORE)
 - [Manu Ullas](https://github.com/unullmass) - compression option for downloads (3.0.9)
@@ -45,8 +66,27 @@ In addition to the many folks who submit bug reports, a big thanks to the follow
 
 ## Changelog
 
+3.2.0 - Jan 29, 2015
+- Adds a new REST API as an alternative way to generate data. See the [API Documentation](http://benkeen.github.io/generatedata/api.html)
+for more information.
+
+3.1.4 - Sept 6, 2014
+- Chinese language file added, thanks to [Zhao Yang](https://github.com/jptiancai)
+- PAN, Track 1 and Track 2 data type updates, courtesy of Zeeshan Shaikh
+- Turkey Country plugin added
+- Bug fixes: https://github.com/benkeen/generatedata/issues?q=milestone%3A3.1.4+is%3Aclosed
+
+3.1.3 - July 20, 2014
+- Misc data generation efficiency improvements
+- Batch Size SQL export option added by [Anton Nizhegorodov](https://github.com/an1zhegorodov)
+- Poland, Nigeria Country plugins added
+- Bug fixes: https://github.com/benkeen/generatedata/issues?milestone=13&page=1&state=closed
+
+3.1.2 - July 12, 2014
+- Bug fixes: https://github.com/benkeen/generatedata/issues?milestone=12&page=1&state=closed
+
 3.1.1 - Jan 31, 2014
-- New credit card data types: PAN, PIN, CVV, Track 1 and Track 2 courtesy of Zeeshan Shaikh.
+- New credit card data types: PAN, PIN, CVV, Track 1 and Track 2 courtesy of Zeeshan Shaikh
 - INSERT IGNORE option added to the SQL Export Type, thanks to [Ap.Mathu](https://github.com/apmuthu)
 - Bug fixes: https://github.com/benkeen/generatedata/issues?milestone=11&page=1&state=closed
 
@@ -71,7 +111,7 @@ In addition to the many folks who submit bug reports, a big thanks to the follow
 - Optional JS, CSS minimization and bundling via Grunt. See help documentation for more information:
 [http://benkeen.github.io/generatedata/developer.html#bundling](http://benkeen.github.io/generatedata/developer.html#bundling)
 - PHP 5.5 compatibility fixes: database connection now with mysqli; Generator class renamed to DataGenerator due
-to naming conflict.
+to naming conflict
 - Bug fixes: https://github.com/benkeen/generatedata/issues?milestone=7&page=1&state=closed
 
 3.0.6 - Aug 1, 2013
@@ -79,7 +119,7 @@ to naming conflict.
 - bug fixes, see: https://github.com/benkeen/generatedata/issues?milestone=6&page=1&state=closed
 
 3.0.5 - July 13, 2013
-- Currency Data Type added.
+- Currency Data Type added
 - Assorted bug fixes, see: https://github.com/benkeen/generatedata/issues?milestone=5&page=1&state=closed
 
 3.0.4 - July 2nd, 2013
@@ -98,7 +138,7 @@ to naming conflict.
 - Assorted bug fixes / updates. See: https://github.com/benkeen/generatedata/issues?milestone=1&state=closed
 
 3.0.0 - May 21st, 2013
-- Initial release.
+- Initial release
 
 
 Ben Keen

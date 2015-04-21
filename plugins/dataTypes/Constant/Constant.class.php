@@ -32,7 +32,7 @@ class DataType_Constant extends DataTypePlugin {
 		);
 	}
 
-	public function getRowGenerationOptions($generator, $postdata, $colNum, $numCols) {
+	public function getRowGenerationOptionsUI($generator, $postdata, $colNum, $numCols) {
 		if (!isset($postdata["dtOption_$colNum"])) {
 			return false;
 		}
@@ -58,6 +58,19 @@ class DataType_Constant extends DataTypePlugin {
 
 		return $options;
 	}
+
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		if ($json->settings->loopCount <= 0) {
+			return false;
+		}
+
+		$options = array(
+			"loopCount" => $json->settings->loopCount,
+			"values"    => explode("|", $json->settings->values)
+		);
+		return $options;
+	}
+
 
 	public function getExampleColumnHTML() {
 		$L = Core::$language->getCurrentLanguageStrings();

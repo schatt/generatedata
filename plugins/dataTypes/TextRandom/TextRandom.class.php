@@ -35,7 +35,7 @@ class DataType_TextRandom extends DataTypePlugin {
 		);
 	}
 
-	public function getRowGenerationOptions($generator, $postdata, $column, $numCols) {
+	public function getRowGenerationOptionsUI($generator, $postdata, $column, $numCols) {
 		if (empty($postdata["dtNumWordsMin_$column"]) || empty($postdata["dtNumWordsMin_$column"])) {
 			return false;
 		}
@@ -46,6 +46,15 @@ class DataType_TextRandom extends DataTypePlugin {
 			"startsWithLipsum" => isset($postdata["dtStartsWithLipsum_$column"]) ? true : false
 		);
 
+		return $options;
+	}
+
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		$options = array(
+			"numWordsMin"      => $json->settings->minWords,
+			"numWordsMax"      => $json->settings->maxWords,
+			"startsWithLipsum" => $json->settings->startsWithLipsum
+		);
 		return $options;
 	}
 

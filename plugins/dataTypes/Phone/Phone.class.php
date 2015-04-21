@@ -17,19 +17,25 @@ class DataType_Phone extends DataTypePlugin {
 		$phoneStr = Utils::generateRandomAlphanumericStr($generationContextData["generationOptions"]);
 		$formats = explode("|", $phoneStr);
 		$chosenFormat = $formats[0];
-		if (count($formats) > 1) {
-			$chosenFormat = $formats[mt_rand(0, count($formats)-1)];
+
+		$numFormats = count($formats);
+		if ($numFormats > 1) {
+			$chosenFormat = $formats[mt_rand(0, $numFormats-1)];
 		}
 		return array(
 			"display" => $chosenFormat
 		);
 	}
 
-	public function getRowGenerationOptions($generator, $post, $colNum, $numCols) {
+	public function getRowGenerationOptionsUI($generator, $post, $colNum, $numCols) {
 		if (!isset($post["dtOption_$colNum"]) || empty($post["dtOption_$colNum"])) {
 			return false;
 		}
 		return $post["dtOption_$colNum"];
+	}
+
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		return $json->settings->placeholder;
 	}
 
 	public function getExampleColumnHTML() {

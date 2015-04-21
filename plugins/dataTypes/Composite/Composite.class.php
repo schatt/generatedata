@@ -41,11 +41,18 @@ class DataType_Composite extends DataTypePlugin {
 		);
 	}
 
-	public function getRowGenerationOptions($generator, $postdata, $col, $num_cols) {
+	public function getRowGenerationOptionsUI($generator, $postdata, $col, $num_cols) {
 		if (!isset($postdata["dtOption_$col"]) || empty($postdata["dtOption_$col"])) {
 			return false;
 		}
 		return $postdata["dtOption_$col"];
+	}
+
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		if (empty($json->settings->placeholder)) {
+			return false;
+		}
+		return $json->settings->placeholder;
 	}
 
 	public function getExampleColumnHTML() {

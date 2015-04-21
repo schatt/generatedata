@@ -15,6 +15,9 @@
 
 require_once(__DIR__ . "/resources/classes/Account.class.php");
 require_once(__DIR__ . "/resources/classes/AjaxRequest.class.php");
+require_once(__DIR__ . "/resources/classes/API.abstract.class.php");
+require_once(__DIR__ . "/resources/classes/API.class.php");
+require_once(__DIR__ . "/resources/classes/Constants.class.php");
 require_once(__DIR__ . "/resources/classes/Core.class.php");
 require_once(__DIR__ . "/resources/classes/CountryPlugin.abstract.class.php");
 require_once(__DIR__ . "/resources/classes/CountryPluginHelper.class.php");
@@ -36,7 +39,8 @@ require_once(__DIR__ . "/resources/classes/Templates.class.php");
 require_once(__DIR__ . "/resources/classes/Translations.class.php");
 require_once(__DIR__ . "/resources/classes/Utils.class.php");
 
-// Smarty - use SecureSmarty!
+// External libs
+require_once(__DIR__ . "/resources/libs/jsv4.php");
 require_once(__DIR__ . "/resources/libs/smarty/Smarty.class.php");
 require_once(__DIR__ . "/resources/classes/SecureSmarty.class.php");
 

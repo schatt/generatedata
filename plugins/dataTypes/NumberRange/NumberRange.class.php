@@ -19,7 +19,7 @@ class DataType_NumberRange extends DataTypePlugin {
 		);
 	}
 
-	public function getRowGenerationOptions($generator, $postdata, $column, $numCols) {
+	public function getRowGenerationOptionsUI($generator, $postdata, $column, $numCols) {
 		if ((empty($postdata["dtNumRangeMin_$column"]) && $postdata["dtNumRangeMin_$column"] !== "0") ||
 			(empty($postdata["dtNumRangeMax_$column"]) && $postdata["dtNumRangeMax_$column"] !== "0")) {
 			return false;
@@ -30,6 +30,14 @@ class DataType_NumberRange extends DataTypePlugin {
 		$options = array(
 			"min" => $postdata["dtNumRangeMin_$column"],
 			"max" => $postdata["dtNumRangeMax_$column"]
+		);
+		return $options;
+	}
+
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		$options = array(
+			"min" => $json->settings->rangeMin,
+			"max" => $json->settings->rangeMax
 		);
 		return $options;
 	}

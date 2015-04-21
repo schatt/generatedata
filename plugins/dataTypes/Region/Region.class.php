@@ -35,7 +35,6 @@ class DataType_Region extends DataTypePlugin {
 
 		// if no country plugins were defined, we just randomly grab a region from what's available
 		if ($generationOptions["resultType"] == "any") {
-
 			$randRegionInfo = $this->getRandRegion($this->countryRegionHash);
 
 			$index = mt_rand(0, 1);
@@ -86,9 +85,9 @@ class DataType_Region extends DataTypePlugin {
 					$regionInfo["display"] = $regionInfo[$keys[$index]];
 				} else {
 					$randRegionInfo = $this->getRandRegion($generationOptions["countries"]);
-					$randCountrySlug = $randRegionInfo["countrySlug"];
-					$formatIndex = $this->getRandIndex($generationOptions["countries"], $randCountrySlug);
-					$randCountry = $this->countryRegionHash[$randCountrySlug];
+					$currRowCountrySlug = $randRegionInfo["countrySlug"];
+					$formatIndex = $this->getRandIndex($generationOptions["countries"], $currRowCountrySlug);
+					$randCountry = $this->countryRegionHash[$currRowCountrySlug];
 					$regionInfo = $randCountry["regions"][mt_rand(0, $randCountry["numRegions"]-1)];
 					$regionInfo["display"] = $regionInfo[$keys[$formatIndex]];
 				}
@@ -100,7 +99,7 @@ class DataType_Region extends DataTypePlugin {
 		return $regionInfo;
 	}
 
-	public function getRowGenerationOptions($generator, $postdata, $colNum, $numCols) {
+	public function getRowGenerationOptionsUI($generator, $postdata, $colNum, $numCols) {
 		$countries = $generator->getCountries();
 		$generationOptions = array();
 
@@ -126,6 +125,31 @@ class DataType_Region extends DataTypePlugin {
 		return $generationOptions;
 	}
 
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		$countries = $generator->getCountries();
+		$generationOptions = array();
+
+		// if the user didn't select any Country plugins, they want ANY old region
+		if (!isset($json->settings->countries)) {
+			$generationOptions["resultType"] = "any";
+		} else {
+			$generationOptions["resultType"] = "specificCountries";
+			$generationOptions["countries"] = array();
+
+			$config = $json->settings->countries;
+			foreach ($countries as $slug) {
+				if (property_exists($config, $slug)) {
+					$regionFull  = property_exists($config->{$slug}, "full") ? $config->{$slug}->full : true;
+					$regionShort = property_exists($config->{$slug}, "short") ? $config->{$slug}->short : true;
+					$generationOptions["countries"][$slug] = array(
+						"full"  => $regionFull,
+						"short" => $regionShort
+					);
+				}
+			}
+		}
+		return $generationOptions;
+	}
 
 	public function getOptionsColumnHTML() {
 		$countryPlugins = Core::$countryPlugins;
@@ -188,7 +212,8 @@ EOF;
 		// now get a random region, taking into account it's weight
 		$weightedValues = array();
 		$regions = $randCountry["regions"];
-		for ($i=0; $i<count($regions); $i++) {
+		$numRegions = count($regions);
+		for ($i=0; $i<$numRegions; $i++) {
 			$weightedValues["{$i}"] = $regions[$i]["weight"];
 		}
 		$randomIndex = Utils::weightedRand($weightedValues);

@@ -29,10 +29,13 @@ class Core {
 	private static $defaultTheme = "classic";
 	private static $enableSmartySecurity = true;
 	private static $useMinifiedResources = false;
+	private static $pluginSettings = array();
+	private static $timeout = 300; // 5 minutes
+	private static $apiEnabled = false;
 
 	// non-overridable settings
-	private static $version = "3.1.1";
-	private static $releaseDate = "2014-01-30";
+	private static $version = "3.2.0";
+	private static $releaseDate = "2015-01-29";
 	private static $minimumPHPVersion = "5.3.0";
 	private static $minimumMySQLVersion = "4.1.3";
 	private static $settingsFileExists = false;
@@ -107,7 +110,7 @@ class Core {
 		self::loadSettingsFile();
 		error_reporting(self::$errorReporting);
 
-		// ensure the timezone is set
+		// ensure the timezone is set. This is an arbitrary value (well, I live in Vancouver!) but it prevents warnings
 		if (ini_get("date.timezone") == "") {
 			ini_set("date.timezone", "Canada/Vancouver");
 		}
@@ -140,6 +143,8 @@ class Core {
 		if (in_array($runtimeContext, array("ui", "generation", "resetPlugins"))) {
 			self::initUser();
 		}
+
+		set_time_limit(self::$timeout);
 	}
 
 
@@ -162,6 +167,7 @@ class Core {
 			self::$dbPassword = (isset($dbPassword)) ? $dbPassword : null;
 			self::$dbTablePrefix = (isset($dbTablePrefix)) ? $dbTablePrefix : null;
 			self::$encryptionSalt = (isset($encryptionSalt)) ? $encryptionSalt : null;
+			self::$pluginSettings = (isset($pluginSettings)) ? $pluginSettings : array();
 
 			if (isset($demoMode)) {
 				self::$demoMode = $demoMode;
@@ -186,6 +192,12 @@ class Core {
 			}
 			if (isset($useMinifiedResources)) {
 				self::$useMinifiedResources = $useMinifiedResources;
+			}
+			if (isset($pluginSettings)) {
+				self::$pluginSettings = $pluginSettings;
+			}
+			if (isset($apiEnabled)) {
+				self::$apiEnabled = $apiEnabled;
 			}
 
 			// TODO temporary, during alpha dev
@@ -384,6 +396,30 @@ class Core {
 		return self::$defaultTheme;
 	}
 
+	/**
+	 * Determines whether the REST API functionality is available or not.
+	 * @return bool
+	 */
+	public static function isApiEnabled() {
+		return self::$apiEnabled;
+	}
+
+	/**
+	 * Added in 3.1.4. This allows any plugins to have custom settings defined in $pluginSettings. This
+	 * function returns null if no settings exist for the plugin, or whatever settings have been provided.
+	 * @param $pluginType
+	 * @param $pluginFolder
+	 * @return mixed
+	 */
+	public static function getPluginSettings($pluginType, $pluginFolder) {
+		if (!array_key_exists($pluginType, self::$pluginSettings)) {
+			return null;
+		}
+		if (!array_key_exists($pluginFolder, self::$pluginSettings[$pluginType])) {
+			return null;
+		}
+		return self::$pluginSettings[$pluginType][$pluginFolder];
+	}
 
 	public static function isSmartySecurityEnabled() {
 		return self::$enableSmartySecurity;

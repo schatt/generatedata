@@ -11,6 +11,10 @@ class ExportTypePluginHelper {
 
 	/**
 	 * Returns an array of available, instantiated Export Type objects.
+	 * @param $runtimeContext the Core:init() is called in various times, which behave slightly differently. The
+	 *  valid values for this are: "generation", "installation", "resetPlugins", "installationDatabaseReady"
+	 * @param $installedOnly
+	 * @return array
 	 */
 	public static function getExportTypePlugins($runtimeContext, $installedOnly = true) {
 		$allowedExportTypes = array();
@@ -50,6 +54,37 @@ class ExportTypePluginHelper {
 
 		return $exportTypes;
 	}
+
+	/**
+	 * Helper function to return an array of valid Export Type folders.
+	 * @return array
+	 */
+	public static function getExportTypeFolders() {
+		$exportTypes = Core::$exportTypePlugins;
+		$folders = array();
+		foreach ($exportTypes as $exportType) {
+			$folders[] = $exportType->getFolder();
+		}
+		return $folders;
+	}
+
+	/**
+	 * Helper function to get an Export Type by its folder name.
+	 * @param $folder
+	 * @return mixed
+	 */
+	public static function getExportTypeByFolder($folder) {
+		$exportTypes = Core::$exportTypePlugins;
+		$exportType = null;
+		foreach ($exportTypes as $currExportType) {
+			if ($folder == $currExportType->getFolder()) {
+				$exportType = $currExportType;
+				break;
+			}
+		}
+		return $exportType;
+	}
+
 
 	/**
 	 * Instantiates and returns an Export Type object.
@@ -149,6 +184,7 @@ class ExportTypePluginHelper {
 	 * Used in the main page to generate the Export Type CSS includes.
 	 * @param array the export types
 	 * @param string
+	 * @return string
 	 */
 	public static function getExportTypeCSSIncludes($exportTypes) {
 		$files = array();

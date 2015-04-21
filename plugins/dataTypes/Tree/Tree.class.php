@@ -99,7 +99,7 @@ class DataType_Tree extends DataTypePlugin {
 		);
 	}
 
-	public function getRowGenerationOptions($generator, $postdata, $colNum, $numCols) {
+	public function getRowGenerationOptionsUI($generator, $postdata, $colNum, $numCols) {
 		if (empty($postdata["dtTreeAutoIncrementRowNum_$colNum"]) || empty($postdata["dtTreeMaxSiblings_$colNum"])) {
 			return false;
 		}
@@ -109,6 +109,15 @@ class DataType_Tree extends DataTypePlugin {
 		$options = array(
 			"autoIncrementRowNum" => $postdata["dtTreeAutoIncrementRowNum_$colNum"],
 			"maxSiblings"         => $postdata["dtTreeMaxSiblings_$colNum"]
+		);
+
+		return $options;
+	}
+
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		$options = array(
+			"autoIncrementRowNum" => $json->settings->autoIncRowNum,
+			"maxSiblings"         => $json->settings->maxSiblings
 		);
 
 		return $options;

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @author Ben Keen <ben.keen@gmail.com>, origin code Zeeshan Shaikh
+ * @author Ben Keen <ben.keen@gmail.com>, origin code Zeeshan Shaikh <zeeshanyshaikh@gmail.com>
  * @package DataTypes
  */
 class DataType_PAN extends DataTypePlugin {
@@ -197,6 +197,7 @@ class DataType_PAN extends DataTypePlugin {
 	}
 
 
+	// TODO why is `length` necessary? Very confusing.
 	public function generate($generator, $generationContextData) {
 		$options = $generationContextData["generationOptions"];
 
@@ -205,8 +206,8 @@ class DataType_PAN extends DataTypePlugin {
 		}
 
 		$ccLength    = self::getRandomPANLength($options["cc_length"]);
-		$ccFormat    = self::getRandomPANFormat($options["cc_format"], $options["cc_length"]);
-		$ccSeparator = self::getRandomPANSeparator($options["cc_separator"], $options["cc_format"]);
+		$ccFormat    = self::getRandomPANFormat($options["cc_format"], $ccLength);
+		$ccSeparator = self::getRandomPANSeparator($options["cc_separator"]);
 
 		$ccData = self::getCreditCardData($options["cc_brand"]);
 		$card = self::generateCreditCardNumber($ccData["prefix"], $ccLength);
@@ -230,19 +231,31 @@ class DataType_PAN extends DataTypePlugin {
 		}
 
 		$cardData = self::getCreditCardData($selectedCard);
+		
+		$options["cc_brand"] = $selectedCard;
 		$options["cc_format"] = $cardData["formats"][array_rand($cardData["formats"])];
 		$options["cc_length"] = self::getRandomPANLength($cardData["length"]);
 
 		return $options;
 	}
 
-	public function getRowGenerationOptions($generator, $postdata, $colNum, $numCols) {
+	public function getRowGenerationOptionsUI($generator, $postdata, $colNum, $numCols) {
 		return array(
 			"cc_brand"	     => $postdata["dtExample_$colNum"],
 			"cc_separator"   => $postdata["dtOptionPAN_sep_$colNum"],
 			"cc_format"      => $postdata["dtOption_$colNum"],
 			"cc_length"      => $postdata["dtOptionPAN_digit_$colNum"],
 			"cc_random_card" => $postdata["dtOptionPAN_randomCardFormat_$colNum"]
+		);
+	}
+
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		return array(
+			"cc_brand"	     => $json->settings->brand,
+			"cc_separator"   => property_exists($json->settings, "separator") ? $json->settings->separator : " ",
+			"cc_format"      => $json->settings->format,
+			"cc_length"      => $json->settings->length,
+			"cc_random_card" => $json->settings->random_card
 		);
 	}
 
@@ -273,12 +286,12 @@ END;
 
 	public function getOptionsColumnHTML() {
 		$html =<<< END
-<span id="dtOptionPAN_cardDigitSection_%ROW%">
+<span id="dtOptionPAN_cardDigitSection_%ROW%" style="display:inline;">
 	{$this->L["length"]}
 	<input type="text" name="dtOptionPAN_digit_%ROW%" id="dtOptionPAN_digit_%ROW%" style="width: 60px" readonly="readonly" />
 </span>
 
-<span id="dtOptionPAN_cardSeparator_%ROW%">
+<span id="dtOptionPAN_cardSeparator_%ROW%" style="display:inline;">
 	{$this->L["separators"]}
 	<input type="text" name="dtOptionPAN_sep_%ROW%" id="dtOptionPAN_sep_%ROW%" style="width: 78px" value=" " title="{$this->L["separator_help"]}" />
 </span>
@@ -288,7 +301,7 @@ END;
 	<textarea name="dtOption_%ROW%" id="dtOption_%ROW%" title="{$this->L["format_title"]}" style="height: 100px; width: 260px"></textarea>
 </span>
 
-<span id="dtOptionPAN_randomCardFormatSection_%ROW%" style="display:none;">
+<div id="dtOptionPAN_randomCardFormatSection_%ROW%" style="display:none;">
 	{$this->L["ccrandom"]}
 	<select multiple="multiple" name="dtOptionPAN_randomCardFormat_%ROW%[]" id="dtOptionPAN_randomCardFormat_%ROW%" title="{$this->L["rand_brand_title"]}" style="height: 100px; width: 260px">
 		<option value="mastercard">{$this->L["mastercard"]}</option>
@@ -305,7 +318,7 @@ END;
 		<option value="switch">{$this->L["switch"]}</option>
 		<option value="laser">{$this->L["laser"]}</option>
 	</select>
-</span>
+</div>
 END;
 		return $html;
 	}
@@ -375,70 +388,64 @@ EOF;
 		$result_f = array();
 		$j = 1;
 
-		for ($i=0; $i<count($positions); $i++) {
+		$numPositions = count($positions);
+		for ($i=0; $i<$numPositions; $i++) {
 			$result[$i] = substr($ccnumber, 0, $positions[$i]-$i);
 		}
 
 		$result_f[0] = ($result[0]);
-		for ($i=0; $i<count($positions)-1; $i++) {
+		for ($i=0; $i<$numPositions-1; $i++) {
 			$result_f[$j] = substr($result[$j], $positions[$i]-$i);
 			$j++;
 		}
-		$result_f[count($positions)] = substr($ccnumber, ($positions[count($positions)-1])-(count($positions)-1));
+		$result_f[$numPositions] = substr($ccnumber, ($positions[$numPositions-1])-($numPositions-1));
 
 		return $result_f;
 	}
 
 
+	// very confusing function. What does this do exactly? Why is it necessary?
 	private static function getRandomPANFormat($userSelectedFormats, $randCardLength) {
 
 		// if no format is selected then by default continuous number of that length will be displayed
-		if ($userSelectedFormats == "") {
-			return str_repeat("X", $randCardLength);
+		$defaultFormat = str_repeat("X", $randCardLength);
+		if (empty($userSelectedFormats)) {
+			return $defaultFormat;
 		}
 
-		$formats = explode("\n", $userSelectedFormats);
+		// for ease of use, the API lets you pass formats as an array
+		$formats = (is_array($userSelectedFormats)) ? $userSelectedFormats : explode("\n", $userSelectedFormats);
 
-		$sortedFormat = array();
-		$not_i = 0;
+		$matchingFormats = array();
+		foreach ($formats as $currFormat) {
+			$count_X = 0; // get count of X's to match with the card length
 
-		for ($fc = 0; $fc < count($formats); $fc++){
-			$count_X = "0"; // get count of X's to match with the card length
-
-			for ($i=0; $i<strlen($formats[$fc]); $i++) {
-				if (substr($formats[$fc], $i, 1) == "X") {
+			$len = strlen($currFormat);
+			for ($i=0; $i<$len; $i++) {
+				if ($currFormat[$i] == "X") { // PHP version of a charAt
 					$count_X++;
 				}
 			}
-
 			if ($count_X == $randCardLength) {
-				$sortedFormat[$not_i] = $formats[$fc];
-				$not_i++;
+				$matchingFormats[] = $currFormat;
 			}
 		}
 
-		$chosenFormat = "";
-		if (count($sortedFormat) >= 1) {
-			$chosenFormat = $sortedFormat[mt_rand(0, count($sortedFormat)-1)];
+		if (empty($matchingFormats)) {
+			return $defaultFormat;
+		} else {
+			$chosenFormat = $matchingFormats[mt_rand(0, count($matchingFormats)-1)];
+			return trim($chosenFormat);
 		}
-
-		return trim($chosenFormat);
 	}
 
+	private static function getRandomPANSeparator($separators) {
+		$separatorList = explode("|", $separators);
+		$chosenSep = $separatorList[rand(0, count($separatorList)-1)];
 
-	// will give a random separator
-	private static function getRandomPANSeparator($separators, $randCardFormat) {
-
-		$chosenSep = "";
-		if (preg_match("/[^X]/", $randCardFormat)) {
-
-			$separatorList = explode("|", $separators);
-			$chosenSep = $separatorList[rand(0, count($separatorList)-1)];
-
-			// if no separator was entered
-			if ($separators == "") {
-				$chosenSep = " ";
-			}
+		// if no separator was entered
+		if ($separators == "") {
+			$chosenSep = " ";
 		}
 
 		return $chosenSep;
@@ -447,11 +454,7 @@ EOF;
 
 	private static function getRandomPANLength($userSelectedLength) {
 
-		// this would be better
-//		$groups = explode(",", $userSelectedLength);
-//		for ($i=0; $i<count($groups); $i++) {
-//			$groups = explode(",", $groups[$i]);
-//		}
+		// TODO
 
 		// if there's more than 1 card length then pick a random one
 		if ($userSelectedLength == "12-19") {
@@ -476,8 +479,10 @@ EOF;
 		$ccNumber = $prefixList[array_rand($prefixList)];
 
 		// generate digits
-		while (strlen($ccNumber)<($length-1)) {
-			$ccNumber .= mt_rand(0,9);
+		$count = strlen($ccNumber);
+		while ($count < ($length - 1)) {
+			$ccNumber .= mt_rand(0, 9);
+			$count++;
 		}
 
 		// calculate sum
@@ -493,7 +498,7 @@ EOF;
 			$sum += $odd;
 
 			if ($pos != ($length - 2)) {
-				$sum += $reversedCCnumber[ $pos +1 ];
+				$sum += $reversedCCnumber[$pos+1];
 			}
 			$pos += 2;
 		}

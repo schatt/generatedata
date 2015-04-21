@@ -65,11 +65,18 @@ class DataType_Names extends DataTypePlugin {
 	}
 
 
-	public function getRowGenerationOptions($generator, $post, $colNum, $numCols) {
+	public function getRowGenerationOptionsUI($generator, $post, $colNum, $numCols) {
 		if (!isset($post["dtOption_$colNum"]) || empty($post["dtOption_$colNum"])) {
 			return false;
 		}
 		return $post["dtOption_$colNum"];
+	}
+
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		if (empty($json->settings->placeholder)) {
+			return false;
+		}
+		return $json->settings->placeholder;
 	}
 
 
@@ -260,12 +267,4 @@ EOF;
 
 		return $content;
 	}
-
-	public function getRestOptionsFormat() {
-		return array(
-			"required" => true,
-			"type" => "string"
-		);
-	}
-
 }

@@ -75,6 +75,7 @@ class DataType_Country extends DataTypePlugin {
 
 	public function generate($generator, $generationContextData) {
 		$data = array();
+
 		if ($generationContextData["generationOptions"] == "all") {
 			$data["display"] = $this->countries[mt_rand(0, $this->numCountries-1)];
 		} else {
@@ -92,9 +93,9 @@ class DataType_Country extends DataTypePlugin {
 	}
 
 	/**
-	 * @see DataTypePlugin::getRowGenerationOptions()
+	 * @see DataTypePlugin::getRowGenerationOptionsUI()
 	 */
-	public function getRowGenerationOptions($generator, $postdata, $colNum, $numCols) {
+	public function getRowGenerationOptionsUI($generator, $postdata, $colNum, $numCols) {
 		$selectedCountrySlugs = $generator->getCountries();
 
 		$option = "all";
@@ -115,6 +116,23 @@ class DataType_Country extends DataTypePlugin {
 		return $option;
 	}
 
+	/**
+	 * @see DataTypePlugin::getRowGenerationOptionsAPI()
+	 */
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		$selectedCountrySlugs = $generator->getCountries();
+
+		// if the user didn't select any countries and they checked the "limit to those countries selected above
+		// option, there's nothing for us to generate. Just return false so the row is ignored
+		if (empty($selectedCountrySlugs) && $json->settings->limitCountriesToSelectedPlugins) {
+			return false;
+		}
+
+		$this->selectedCountrySlugs    = $selectedCountrySlugs;
+		$this->numSelectedCountrySlugs = count($selectedCountrySlugs);
+
+		return ($json->settings->limitCountriesToSelectedPlugins) ? "countryPluginsOnly" : "all";
+	}
 
 	public function getOptionsColumnHTML() {
 		$html =<<< END

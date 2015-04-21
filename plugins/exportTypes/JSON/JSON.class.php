@@ -16,16 +16,16 @@ class JSON extends ExportTypePlugin {
 
 
 	public function generate($generator) {
-		$postData     = $generator->getPostData();
+		$this->genEnvironment = $generator->genEnvironment; // API / POST
+		$this->userSettings   = $generator->getUserSettings();
+
 		$data         = $generator->generateExportData();
 		$template     = $generator->getTemplateByDisplayOrder();
-		$stripWhitespace     = isset($postData["etJSON_stripWhitespace"]);
-		$dataStructureFormat = isset($postData["etJSON_dataStructureFormat"]) ? $postData["etJSON_dataStructureFormat"] : "complex";
+		$stripWhitespace     = $this->shouldStripWhitespace();
+		$dataStructureFormat = $this->getDataStructureFormat();
 
 		// figure out which fields are strictly numeric. We don't wrap those values in double quotes
-		foreach ($template as $item) {
-			$this->numericFields[] = isset($item["columnMetadata"]["type"]) && $item["columnMetadata"]["type"] == "numeric";
-		}
+		$this->determineNumericFields($template);
 
 		$content = "";
 		if ($dataStructureFormat == "complex") {
@@ -58,7 +58,8 @@ class JSON extends ExportTypePlugin {
 			$pairs = array();
 			for ($j=0; $j<$numCols; $j++) {
 				$varName = preg_replace('/"/', '\"', $data["colData"][$j]);
-				if ($this->numericFields[$j]) {
+
+				if ($this->numericFields[$j] && is_numeric($data["rowData"][$i][$j])) {
 					$pairs[] = "{$tab}{$tab}\"$varName\":{$space}{$data["rowData"][$i][$j]}";
 				} else {
 					$pairs[] = "{$tab}{$tab}\"$varName\":{$space}\"{$data["rowData"][$i][$j]}\"";
@@ -99,7 +100,7 @@ class JSON extends ExportTypePlugin {
 		for ($i=0; $i<$numRows; $i++) {
 			$rowValsArr = array();
 			for ($j=0; $j<$numCols; $j++) {
-				if ($this->numericFields[$j]) {
+				if ($this->numericFields[$j] && is_numeric($data["rowData"][$i][$j])) {
 					$rowValsArr[] = $data["rowData"][$i][$j];
 				} else {
 					$rowValsArr[] = "\"" . $data["rowData"][$i][$j] . "\"";
@@ -153,5 +154,42 @@ class JSON extends ExportTypePlugin {
 			<label for="stJSON_dataStructureFormat2">{$this->L["simple"]}</label>
 END;
 		return $html;
+	}
+
+
+	/**
+	 * Wrapper function to find out whether the user wants whitespace to be enabled or not. The settings content
+	 * is either JSON or a POST array, depending on where the generation is taking place.
+	 */
+	private function shouldStripWhitespace() {
+		$default = false;
+		if ($this->genEnvironment == GEN_ENVIRONMENT_API) {
+			$jsonSettings = $this->userSettings->export->settings;
+			$stripWhitespace = (property_exists($jsonSettings, "stripWhitespace")) ? $jsonSettings->stripWhitespace : $default;
+		} else {
+			$stripWhitespace = isset($this->userSettings["etJSON_whitespace"]);
+		}
+		return $stripWhitespace;
+	}
+
+	/**
+	 * Returns the desired JSON data structure format - simple or complex.
+	 * @return string
+	 */
+	private function getDataStructureFormat() {
+		$default = "complex";
+		if ($this->genEnvironment == GEN_ENVIRONMENT_API) {
+			$jsonSettings = $this->userSettings->export->settings;
+			$format = (property_exists($jsonSettings, "dataStructureFormat")) ? $jsonSettings->dataStructureFormat : $default;
+		} else {
+			$format = isset($this->userSettings["etJSON_dataStructureFormat"]) ? $this->userSettings["etJSON_dataStructureFormat"] : $default;
+		}
+		return $format;
+	}
+
+	private function determineNumericFields($template) {
+		foreach ($template as $item) {
+			$this->numericFields[] = isset($item["columnMetadata"]["type"]) && $item["columnMetadata"]["type"] == "numeric";
+		}
 	}
 }

@@ -7,6 +7,21 @@
  */
 class Utils {
 
+	// the Utils class memoizes a bunch of stuff to improve speed
+	static $charLengthMemoized = false;
+	static $letters     = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	static $consonants  = "BCDFGHJKLMNPQRSTVWXYZ";
+	static $vowels      = "AEIOU";
+	static $hex         = "0123456789ABCDEF";
+	static $lettersLen;
+	static $consonantsLen;
+	static $vowelsLen;
+	static $hexLen;
+
+	static $lipsumMemoized = false;
+	static $lipsum;
+
+
 	public static function cleanHash($hash) {
 		$cleanHash = $hash;
 		if (get_magic_quotes_gpc()) {
@@ -95,8 +110,9 @@ class Utils {
 			return;
 		}
 		// check $num is no greater than the total set
-		if ($num > count($set)) {
-			$num = count($set);
+		$numInSet = count($set);
+		if ($num > $numInSet) {
+			$num = $numInSet;
 		}
 		shuffle($set);
 		return array_slice($set, 0, $num);
@@ -171,58 +187,65 @@ class Utils {
 	 * @return string
 	 */
 	static public function generateRandomAlphanumericStr($str) {
-		$letters    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-		$consonants = "BCDFGHJKLMNPQRSTVWXYZ";
-		$vowels     = "AEIOU";
-		$hex        = "0123456789ABCDEF";
+
+		// simple memoization to GREATLY increase speed for this heavily-relied on function
+		if (!self::$charLengthMemoized) {
+			self::$lettersLen    = strlen(self::$letters);
+			self::$consonantsLen = strlen(self::$consonants);
+			self::$vowelsLen     = strlen(self::$vowels);
+			self::$hexLen        = strlen(self::$hex);
+			self::$charLengthMemoized = true;
+		}
+
 
 		// loop through each character and convert all unescaped X's to 1-9 and
 		// unescaped x's to 0-9.
 		$new_str = "";
-		for ($i=0; $i<strlen($str); $i++) {
+		$strlen = strlen($str);
+		for ($i=0; $i<$strlen; $i++) {
 			switch ($str[$i]) {
 				// Numbers
-				case "X": $new_str .= mt_rand(1,9);  break;
-				case "x": $new_str .= mt_rand(0,9);  break;
+				case "X": $new_str .= mt_rand(1, 9);  break;
+				case "x": $new_str .= mt_rand(0, 9);  break;
 
 				// Letters
-				case "L": $new_str .= $letters[mt_rand(0, strlen($letters)-1)]; break;
-				case "l": $new_str .= strtolower($letters[mt_rand(0, strlen($letters)-1)]); break;
+				case "L": $new_str .= self::$letters[mt_rand(0, self::$lettersLen-1)]; break;
+				case "l": $new_str .= strtolower(self::$letters[mt_rand(0, self::$lettersLen-1)]); break;
 				case "D":
 					$bool = mt_rand()&1;
 					if ($bool) {
-						$new_str .= $letters[mt_rand(0, strlen($letters)-1)];
+						$new_str .= self::$letters[mt_rand(0, self::$lettersLen-1)];
 					} else {
-						$new_str .= strtolower($letters[mt_rand(0, strlen($letters)-1)]);
+						$new_str .= strtolower(self::$letters[mt_rand(0, self::$lettersLen-1)]);
 					}
 					break;
 
 				// Consonants
-				case "C": $new_str .= $consonants[mt_rand(0, strlen($consonants)-1)];      break;
-				case "c": $new_str .= strtolower($consonants[mt_rand(0, strlen($consonants)-1)]);  break;
+				case "C": $new_str .= self::$consonants[mt_rand(0, self::$consonantsLen-1)];      break;
+				case "c": $new_str .= strtolower(self::$consonants[mt_rand(0, self::$consonantsLen-1)]);  break;
 				case "E":
 					$bool = mt_rand()&1;
 					if ($bool) {
-						$new_str .= $consonants[mt_rand(0, strlen($consonants)-1)];
+						$new_str .= self::$consonants[mt_rand(0, self::$consonantsLen-1)];
 					} else {
-						$new_str .= strtolower($consonants[mt_rand(0, strlen($consonants)-1)]);
+						$new_str .= strtolower(self::$consonants[mt_rand(0, self::$consonantsLen-1)]);
 					}
 					break;
 
 				// Vowels
-				case "V": $new_str .= $vowels[mt_rand(0, strlen($vowels)-1)];  break;
-				case "v": $new_str .= strtolower($vowels[mt_rand(0, strlen($vowels)-1)]);  break;
+				case "V": $new_str .= self::$vowels[mt_rand(0, self::$vowelsLen-1)];  break;
+				case "v": $new_str .= strtolower(self::$vowels[mt_rand(0, self::$vowelsLen-1)]);  break;
 				case "F":
 					$bool = mt_rand()&1;
 					if ($bool) {
-						$new_str .= $vowels[mt_rand(0, strlen($vowels)-1)];
+						$new_str .= self::$vowels[mt_rand(0, self::$vowelsLen-1)];
 					} else {
-						$new_str .= strtolower($vowels[mt_rand(0, strlen($vowels)-1)]);
+						$new_str .= strtolower(self::$vowels[mt_rand(0, self::$vowelsLen-1)]);
 					}
 					break;
 
 				case "H":
-					$new_str .= $hex[mt_rand(0, strlen($hex)-1)];
+					$new_str .= self::$hex[mt_rand(0, self::$hexLen-1)];
 					break;
 
 				default:
@@ -239,25 +262,27 @@ class Utils {
 	 * Returns an array of lorem ipsum words. Assumes that a file exists in a misc/ subfolder called
 	 * loremipsum.txt, containing lorem ipsum text.
 	 *
-	 * TODO this seems a good candidate to memoize... (no kidding, yikes!)
-	 *
 	 * @return array a large array of words
 	 */
 	public static function getLipsum() {
-		$prefix = Core::getDbTablePrefix();
+		if (!self::$lipsumMemoized) {
+			$prefix = Core::getDbTablePrefix();
 
-		// grab all the words in the text files & put them in an array (1 word per index)
-		$response = Core::$db->query("
-			SELECT *
-			FROM {$prefix}settings
-			WHERE setting_name = 'lipsum'
-		");
+			// grab all the words in the text files & put them in an array (1 word per index)
+			$response = Core::$db->query("
+				SELECT *
+				FROM {$prefix}settings
+				WHERE setting_name = 'lipsum'
+			");
 
-		if ($response["success"]) {
-			$info = mysqli_fetch_assoc($response["results"]);
-			$words = preg_split("/\s+/", $info["setting_value"]);
-			return $words;
+			if ($response["success"]) {
+				$info = mysqli_fetch_assoc($response["results"]);
+				self::$lipsum = preg_split("/\s+/", $info["setting_value"]);
+			}
+			self::$lipsumMemoized = true;
 		}
+
+		return self::$lipsum;
 	}
 
 
@@ -270,22 +295,23 @@ class Utils {
 	 * @param integer $max     - the max # of words to return (or null for "fixed" type)
 	 */
 	public static function generateRandomTextStr($words, $startsWithLipsum, $type, $min, $max = "") {
+
 		// determine the number of words to return
-		$index = 0;
 		if ($type == "fixed") {
 			$numWords = $min;
 		} else if ($type == "range") {
 			$numWords = mt_rand($min, $max);
 		}
 
-		if ($numWords > count($words)) {
-			$numWords = count($words);
+		$totalWords = count($words);
+		if ($numWords > $totalWords) {
+			$numWords = $totalWords;
 		}
 
 		// determine the offset
 		$offset = 0;
 		if (!$startsWithLipsum) {
-			$offset = mt_rand(2, count($words) - ($numWords + 1));
+			$offset = mt_rand(2, $totalWords - ($numWords + 1));
 		}
 		$wordArray = array_slice($words, $offset, $numWords);
 
@@ -299,20 +325,21 @@ class Utils {
 	public static function generateRandomNumStr($str) {
 		// loop through each character and convert all unescaped X's to 1-9 and unescaped x's to 0-9.
 		$new_str = "";
-		for ($i=0; $i<strlen($str); $i++) {
+		$strlen = strlen($str);
+		for ($i=0; $i<$strlen; $i++) {
 			if ($str[$i] == '\\' && ($str[$i+1] == "X" || $str[$i+1] == "x")) {
 				continue;
 			} else if ($str[$i] == "X") {
 				if ($i != 0 && ($str[$i-1] == '\\')) {
 					$new_str .= "X";
 				} else {
-					$new_str .= mt_rand(1,9);
+					$new_str .= mt_rand(1, 9);
 				}
 			} else if ($str[$i] == "x") {
 				if ($i != 0 && ($str[$i-1] == '\\')) {
 					$new_str .= "x";
 				} else {
-					$new_str .= mt_rand(0,9);
+					$new_str .= mt_rand(0, 9);
 				}
 			} else {
 				$new_str .= $str[$i];
@@ -350,7 +377,8 @@ class Utils {
 
 	/**
 	 * A method to recursively encode an array (associative or indexed).
-	 * @param $array
+	 * @param array
+	 * @return array
 	 */
 	public static function utf8_encode_array($array) {
 
@@ -385,4 +413,46 @@ class Utils {
 		}
 		return $resultArray;
 	}
+
+	/**
+	 * Returns a human-readable version of the JSON error codes, listed here:
+	 * http://php.net/manual/en/function.json-last-error.php
+	 * @param error
+	 * @return string
+	 */
+	public static function getJSONErrorMessage($errorCode) {
+		$map = array(
+			JSON_ERROR_NONE           => "No error has occurred (JSON_ERROR_NONE)",
+			JSON_ERROR_DEPTH          => "The maximum stack depth has been exceeded (JSON_ERROR_DEPTH)",
+			JSON_ERROR_STATE_MISMATCH => "Invalid or malformed JSON (JSON_ERROR_STATE_MISMATCH)",
+			JSON_ERROR_CTRL_CHAR      => "Control character error, possibly incorrectly encoded (JSON_ERROR_CTRL_CHAR)",
+			JSON_ERROR_SYNTAX         => "Syntax error (JSON_ERROR_SYNTAX)"
+		);
+
+		// now add the lah-de-dah fancy ones added in PHP versions > 5.3
+		if (defined('JSON_ERROR_UTF8')) {
+			$map[JSON_ERROR_UTF8] = "Malformed UTF-8 characters, possibly incorrectly encoded (JSON_ERROR_UTF8)";
+		}
+		if (defined('JSON_ERROR_RECURSION')) {
+			$map[JSON_ERROR_UTF8] = "One or more recursive references in the value to be encoded (JSON_ERROR_RECURSION)";
+		}
+		if (defined('JSON_ERROR_INF_OR_NAN')) {
+			$map[JSON_ERROR_UTF8] = "One or more NAN or INF values in the value to be encoded (JSON_ERROR_INF_OR_NAN)";
+		}
+		if (defined('JSON_ERROR_UNSUPPORTED_TYPE')) {
+			$map[JSON_ERROR_UTF8] = "A value of a type that cannot be encoded was given (JSON_ERROR_UNSUPPORTED_TYPE)";
+		}
+
+		return (array_key_exists($errorCode, $map)) ? $map[$errorCode] : "Unknown JSON error" . JSON_ERROR_SYNTAX;
+	}
+
+
+	public static function validateJSON($json) {
+		// try decoding the input to see if it's valid or not
+		$data = @json_decode($json);
+		if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
+			return Utils::getJSONErrorMessage(json_last_error());
+		}
+	}
+
 }

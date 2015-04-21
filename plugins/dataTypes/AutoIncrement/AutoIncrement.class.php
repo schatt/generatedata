@@ -20,6 +20,7 @@ class DataType_AutoIncrement extends DataTypePlugin {
 		$start       = $rowSettings["start"];
 		$increment   = $rowSettings["increment"];
 		$placeholder = $rowSettings["placeholder"];
+
 		$val = (($generationContextData["rowNum"]-1) * $increment) + $start;
 
 		if (!empty($placeholder)) {
@@ -31,7 +32,7 @@ class DataType_AutoIncrement extends DataTypePlugin {
 		);
 	}
 
-	public function getRowGenerationOptions($generator, $postdata, $col, $num_cols) {
+	public function getRowGenerationOptionsUI($generator, $postdata, $col, $num_cols) {
 		$start = isset($postdata["dtAutoIncrementStart_$col"]) ? $postdata["dtAutoIncrementStart_$col"] : null;
 		$end   = isset($postdata["dtAutoIncrementValue_$col"]) ? $postdata["dtAutoIncrementValue_$col"] : null;
 
@@ -46,6 +47,15 @@ class DataType_AutoIncrement extends DataTypePlugin {
 		);
 
 		return $options;
+	}
+
+	// the API schema validation takes care of validation for us
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		return array(
+			"start"       => $json->settings->incrementStart,
+			"increment"   => $json->settings->incrementValue,
+			"placeholder" => property_exists($json->settings, "incrementPlaceholder") ? $json->settings->incrementPlaceholder : ""
+		);
 	}
 
 	public function getExampleColumnHTML() {

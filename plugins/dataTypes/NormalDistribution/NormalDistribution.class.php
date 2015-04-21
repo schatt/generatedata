@@ -27,7 +27,7 @@ class DataType_NormalDistribution extends DataTypePlugin {
 	}
 
 
-	public function getRowGenerationOptions($generator, $postdata, $colNum, $numCols) {
+	public function getRowGenerationOptionsUI($generator, $postdata, $colNum, $numCols) {
 		if ((empty($postdata["dtOptionMean_$colNum"]) && $postdata["dtOptionMean_$colNum"] !== "0") ||
 			(empty($postdata["dtOptionSigma_$colNum"]) && $postdata["dtOptionSigma_$colNum"] !== "0")) {
 			return false;
@@ -37,6 +37,15 @@ class DataType_NormalDistribution extends DataTypePlugin {
 		return array(
 			"mean"   => $postdata["dtOptionMean_$colNum"],
 			"stddev" => $postdata["dtOptionSigma_$colNum"]
+		);
+	}
+
+	public function getRowGenerationOptionsAPI($generator, $json, $numCols) {
+		$this->randMax = (float) getrandmax();
+
+		return array(
+			"mean"   => $json->settings->mean,
+			"stddev" => $json->settings->sigma
 		);
 	}
 
